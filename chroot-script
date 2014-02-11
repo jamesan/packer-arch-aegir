@@ -1,0 +1,40 @@
+#!/usr/bin/sh
+
+cd /usr/bin
+
+# Configure L10n settings
+echo 'packer-arch-aegir' > /etc/hostname
+ln -s /usr/share/zoneinfo/UTC /etc/localtime
+sed -i 's/#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+echo -e 'LANG="en_US.UTF-8"\nLANGUAGE="en_US.UTF-8:en_US:en"\nLC_COLLATE="C"' > /etc/locale.conf
+echo 'KEYMAP=us' > /etc/vconsole.conf
+locale-gen
+
+# Configure boot/root settings
+mkinitcpio -p linux
+syslinux-install_update -iam
+sed -i 's/^UI/#UI/' /boot/syslinux/syslinux.cfg
+sed -i 's/^TIMEOUT/#TIMEOUT/' /boot/syslinux/syslinux.cfg
+sed -i 's/sda3 rw/sda1 rw init=\/usr\/lib\/systemd\/systemd quiet/' /boot/syslinux/syslinux.cfg
+
+# Configure network settings
+ln -s /dev/null /etc/udev/rules.d/80-net-name-slot.rules
+systemctl enable dhcpcd@eth0.service
+
+# Configure vagrant SSH settings
+passwd -d root
+mkdir ~/.ssh
+curl -o ~/.ssh/authorized_keys https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub
+chmod 0700 ~/.ssh
+chmod 0600 ~/.ssh/authorized_keys
+#sed -i 's/#UseDNS yes/UseDNS no/' /etc/ssh/sshd_config
+sed -i 's/#PermitEmptyPasswords no/PermitEmptyPasswords yes/' /etc/ssh/sshd_config
+systemctl enable sshd.service
+
+# Configure VirtualBox Guest Additions
+pacman --noconfirm -S virtualbox-guest-utils
+echo -e 'vboxguest\nvboxsf\nvboxvideo' > /etc/modules-load.d/virtualbox.conf
+systemctl enable vboxservice.service
+
+# Clean up
+pacman -Scc --noconfirm

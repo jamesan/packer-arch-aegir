@@ -1,0 +1,19 @@
+#!/usr/bin/sh
+
+files=(chroot-script)
+scripts=(10-bootstrap 20-chroot 99-clean-up)
+
+cd /usr/bin
+
+# Transfer files from host
+for file in ${files[@]}; do
+    curl -O $HTTPHOST$file
+done
+for file in ${scripts[@]}; do
+    curl -O $HTTPHOST$file
+done
+
+# Execute build scripts in order
+for script in ${scripts[@]}; do
+    sh $script
+done

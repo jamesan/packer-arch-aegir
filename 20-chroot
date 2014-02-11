@@ -1,0 +1,8 @@
+#!/usr/bin/sh
+
+SCRIPT=chroot-script
+
+chmod +x $SCRIPT
+mv $SCRIPT /mnt
+arch-chroot /mnt /$SCRIPT
+rm /mnt/$SCRIPT

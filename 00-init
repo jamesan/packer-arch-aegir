@@ -1,19 +1,14 @@
 #!/usr/bin/sh
 
-files=(chroot-script)
+chroots=(21-chroot-system 22-chroot-lamp 23-chroot-aegir)
 scripts=(10-bootstrap 20-chroot 99-clean-up)
 
-cd /usr/bin
-
 # Transfer files from host
-for file in ${files[@]}; do
-    curl -O $HTTPHOST$file
+for script in ${chroots[@]}; do
+    curl --remote-name $HTTPHOST$script
 done
-for file in ${scripts[@]}; do
-    curl -O $HTTPHOST$file
-done
-
-# Execute build scripts in order
+# Get and execute build scripts in order
 for script in ${scripts[@]}; do
-    sh $script
+    curl --remote-name $HTTPHOST$script
+#    sh $script
 done

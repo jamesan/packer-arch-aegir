@@ -1,8 +1,18 @@
 #!/usr/bin/sh
 
-SCRIPT=chroot-script
+#chroots=(21-chroot-system 22-chroot-lamp 23-chroot-aegir)
 
-chmod +x $SCRIPT
-mv $SCRIPT /mnt
-arch-chroot /mnt /$SCRIPT
-rm /mnt/$SCRIPT
+# Transfer files from host
+#for script in ${chroots[@]}; do
+#    chmod +x $script
+#    mv $script /mnt
+#    arch-chroot /mnt /$script
+#    rm /mnt/$script
+#done
+
+chmod +x 21-chroot-system 22-chroot-lamp 23-chroot-aegir
+mv 21-chroot-system 22-chroot-lamp 23-chroot-aegir /mnt
+arch-chroot /mnt /21-chroot-system
+arch-chroot /mnt /22-chroot-lamp
+#arch-chroot /mnt /23-chroot-aegir
+(cd /mnt && rm 21-chroot-system 22-chroot-lamp 23-chroot-aegir )

@@ -1,0 +1,37 @@
+#!/usr/bin/sh
+
+# Install Aegir's package dependencies and system and SQL account
+pacman --noconfirm --needed --sync binutils git php-cgi php-pear postfix rsync tar which unzip
+useradd --system --groups http --home /var/aegir --create-home aegir
+echo 'PATH=$PATH:$HOME/.composer/vendor/bin' >> /var/aegir/.bashrc
+mysql --user=root --password=root \
+    --execute="GRANT ALL PRIVILEGES ON *.* TO 'aegir'@'%' IDENTIFIED BY 'aegir' WITH GRANT OPTION;"
+
+# Install Composer and install Drush 7 using Composer
+curl https://aur.archlinux.org/packages/ph/php-composer/php-composer.tar.gz | bsdtar -x -z -f -
+( cd php-composer && makepkg --noconfirm --needed --install --asroot )
+rm --force --recursive php-composer
+sed --in-place 's/^;extension=phar.so$/extension=phar.so/' /etc/php/php.ini
+
+# Install Aegir
+
+aegir_commands=<< EOF
+    composer global require drush/drush:6.* --prefer-source
+    drush pm-download --yes --destination=$HOME/.drush provision-6.x-2.0
+    drush cache-clear drush
+    drush help hostmaster-install
+    drush hostmaster-install lacolhost.com \
+        --aegir_db_user=aegir \
+        --aegir_db_pass=aegir \
+        --client_email=admin@lacolhost.com \
+        --web_group=http \
+        --yes
+EOF
+
+# Reconfigure httpd for aegir
+echo "Include /var/aegir/config/apache.conf" >> /etc/httpd/conf/httpd.conf
+
+# Configure Aegir account to own Aegir installation and control httpd
+chown --recursive aegir:aegir /var/aegir
+echo -e "Defaults:aegir  !requiretty\naegir ALL=NOPASSWD: /usr/bin/apachectl" > /etc/sudoers.d/aegir
+chmod 0440 /etc/sudoers.d/aegir

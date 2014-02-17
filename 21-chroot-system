@@ -1,0 +1,39 @@
+#!/usr/bin/sh
+
+# Configure L10n settings
+echo 'lacolhost.com' > /etc/hostname
+ln --symbolic /usr/share/zoneinfo/UTC /etc/localtime
+sed --in-place 's/#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+echo -e 'LANG="en_US.UTF-8"\nLANGUAGE="en_US.UTF-8:en_US:en"\nLC_COLLATE="C"' > /etc/locale.conf
+echo 'KEYMAP=us' > /etc/vconsole.conf
+locale-gen
+
+# Configure boot/root settings
+mkinitcpio --preset linux
+syslinux-install_update -i -a -m    # Install, set boot flag, install MBR
+sed --in-place 's/^UI/#UI/' /boot/syslinux/syslinux.cfg
+sed --in-place 's/^TIMEOUT/#TIMEOUT/' /boot/syslinux/syslinux.cfg
+sed --in-place 's/sda3 rw/sda1 rw init=\/usr\/lib\/systemd\/systemd quiet/' /boot/syslinux/syslinux.cfg
+
+# Configure network settings
+ln --symbolic /dev/null /etc/udev/rules.d/80-net-name-slot.rules
+systemctl enable dhcpcd@eth0.service
+
+# Create Vagrant account settings
+useradd --groups http,wheel,users,aegir --create-home --password vagrant vagrant
+mkdir /home/vagrant/.ssh
+curl --output /home/vagrant/.ssh/authorized_keys https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub
+chown --recursive vagrant:vagrant /home/vagrant
+chmod 0700 /home/vagrant/.ssh
+chmod 0600 /home/vagrant/.ssh/authorized_keys
+echo -e "Defaults:vagrant  !requiretty\nvagrant ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/vagrant
+chmod 0440 /etc/sudoers.d/vagrant
+
+# Configure SSH settings
+sed --in-place 's/#UseDNS yes/UseDNS no/' /etc/ssh/sshd_config  # Avoid rDNS: http://docs.vagrantup.com/v2/boxes/base.html
+systemctl enable sshd.service
+
+# Configure VirtualBox Guest Additions
+pacman --noconfirm --needed -S virtualbox-guest-utils
+echo -e 'vboxguest\nvboxsf\nvboxvideo' > /etc/modules-load.d/virtualbox.conf
+systemctl enable vboxservice.service

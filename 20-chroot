@@ -14,5 +14,5 @@ chmod +x 21-chroot-system 22-chroot-lamp 23-chroot-aegir
 mv 21-chroot-system 22-chroot-lamp 23-chroot-aegir /mnt
 arch-chroot /mnt /21-chroot-system
 arch-chroot /mnt /22-chroot-lamp
-#arch-chroot /mnt /23-chroot-aegir
+arch-chroot /mnt /23-chroot-aegir
 (cd /mnt && rm 21-chroot-system 22-chroot-lamp 23-chroot-aegir )

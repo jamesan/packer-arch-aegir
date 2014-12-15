@@ -1,4 +1,7 @@
 {
+    "variables": {
+        "email": "drupal@jamesan.ca"
+    },
     "builders": [
         {
             "type": "virtualbox-iso",
@@ -13,7 +16,7 @@
             "shutdown_command": "systemctl poweroff",
             "boot_wait": "5s",
             "boot_command": [
-                "<enter><wait10><wait5>",
+                "<enter><wait10><wait10>",
                 "export HTTPHOST=http://{{.HTTPIP}}:{{.HTTPPort}}/<enter><wait>",
                 "export SCRIPT=00-init<enter><wait>",
                 "curl -O $HTTPHOST$SCRIPT<enter><wait>",

@@ -1,37 +1,36 @@
 #!/usr/bin/sh
 
-# Install Aegir's package dependencies and system and SQL account
-pacman --noconfirm --needed --sync binutils git php-cgi php-pear postfix rsync tar which unzip
-useradd --system --groups http --home /var/aegir --create-home aegir
-echo 'PATH=$PATH:$HOME/.composer/vendor/bin' >> /var/aegir/.bashrc
-mysql --user=root --password=root \
-    --execute="GRANT ALL PRIVILEGES ON *.* TO 'aegir'@'%' IDENTIFIED BY 'aegir' WITH GRANT OPTION;"
+# Install AUR package installer: yaourt
+for pkg in package-query yaourt; do
+    curl "https://aur.archlinux.org/packages/${pkg:0:2}/${pkg}/${pkg}.tar.gz" | tar xzf -
+    (cd "${pkg}"; makepkg --asroot --syncdeps --install --noconfirm)
+    rm -rf "${pkg}"
+done
 
-# Install Composer and install Drush 7 using Composer
-curl https://aur.archlinux.org/packages/ph/php-composer/php-composer.tar.gz | bsdtar -x -z -f -
-( cd php-composer && makepkg --noconfirm --needed --install --asroot )
-rm --force --recursive php-composer
-sed --in-place 's/^;extension=phar.so$/extension=phar.so/' /etc/php/php.ini
+# Install Aegir's package dependencies
+yaourt --sync --noconfirm php-composer drush-git
+
+# Add mysql user for aegir
+#mysql --user=root --password=root \
+#    --execute="GRANT ALL PRIVILEGES ON *.* TO 'aegir_root'@'%' IDENTIFIED BY 'aegir_root' WITH GRANT OPTION;"
 
 # Install Aegir
+yaourt --sync --noconfirm aegir-provision
+yaourt --sync --noconfirm aegir-hostmaster
+#sudo -u aegir drush hostmaster-install \
+#    --web_group=http \
+#    --http_service_type=nginx \
+#    --root=/usr/share/webapps/aegir \
+#    --aegir_db_user=aegir_root \
+#    --aegir_db_pass=aegir_root \
+#    --aegir_host=localhost \
+#    --client_email=james@jamesan.ca \
+#    localhost
 
-aegir_commands=<< EOF
-    composer global require drush/drush:6.* --prefer-source
-    drush pm-download --yes --destination=$HOME/.drush provision-6.x-2.0
-    drush cache-clear drush
-    drush help hostmaster-install
-    drush hostmaster-install lacolhost.com \
-        --aegir_db_user=aegir \
-        --aegir_db_pass=aegir \
-        --client_email=admin@lacolhost.com \
-        --web_group=http \
-        --yes
-EOF
+# Refresh LAMP stack
+#systemctl daemon-reload
+#systemctl reload nginx.service php-fpm.service mysqld.service
 
-# Reconfigure httpd for aegir
-echo "Include /var/aegir/config/apache.conf" >> /etc/httpd/conf/httpd.conf
-
-# Configure Aegir account to own Aegir installation and control httpd
-chown --recursive aegir:aegir /var/aegir
-echo -e "Defaults:aegir  !requiretty\naegir ALL=NOPASSWD: /usr/bin/apachectl" > /etc/sudoers.d/aegir
-chmod 0440 /etc/sudoers.d/aegir
+# Start Aegir queue daemon
+#sudo -u aegir drush @hostmaster en hosting_queued --yes
+#systemctl start aegir.service

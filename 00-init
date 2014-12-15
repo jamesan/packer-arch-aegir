@@ -10,5 +10,5 @@ done
 # Get and execute build scripts in order
 for script in ${scripts[@]}; do
     curl --remote-name $HTTPHOST$script
-#    sh $script
+    sh $script
 done

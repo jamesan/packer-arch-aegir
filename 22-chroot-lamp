@@ -2,19 +2,12 @@
 
 cd /usr/bin
 
-# Install Apache, MariabDB, and PHP
-pacman --noconfirm --needed --sync apache mariadb php php-apache php-gd
+# Install and start nginx, MariabDB, and PHP
+pacman --noconfirm --needed --sync nginx php-fpm mariadb
+systemctl enable nginx.service php-fpm.service mysqld.service
 
-sed --in-place 's/^memory_limit.*$/memory_limit = 192M/'  /etc/php/php.ini
-sed --in-place 's/^open_basedir.*$/open_basedir = /'      /etc/php/php.ini
-sed --in-place 's/^date.timezone.*$/date.timezone = UTC/' /etc/php/php.ini
-
-sed --in-place 's/^;extension=mysqli.so$/extension=mysqli.so/' /etc/php/php.ini
-sed --in-place 's/^;extension=pdo_mysql.so$/extension=pdo_mysql.so/' /etc/php/php.ini
-sed --in-place 's/^;extension=posix.so$/extension=posix.so/' /etc/php/php.ini
-
-systemctl enable httpd
-systemctl enable mysqld
-
-systemctl start mysqld
-echo -e '\n' 'y\n' 'root\nroot\n' '\n\n\n\n' | mysql_secure_installation
+# Initialise database
+# DELETE FROM mysql.user WHERE User='';
+# DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
+# DROP DATABASE test;
+# FLUSH PRIVILEGES;

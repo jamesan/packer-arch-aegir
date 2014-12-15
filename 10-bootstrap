@@ -1,6 +1,7 @@
 #!/usr/bin/sh
 
-packages="dash dhcpcd e2fsprogs gptfdisk licenses linux openssh pacman pciutils procps-ng syslinux sudo"
+packages="base base-devel"
+#packages="dash dhcpcd e2fsprogs gptfdisk licenses linux openssh pacman pciutils procps-ng syslinux sudo"
 
 # Create new GPT disk
 sgdisk --zap-all /dev/sda
@@ -11,6 +12,6 @@ mkfs.ext4 -q /dev/sda1
 mount --types ext4 --options noatime /dev/sda1 /mnt
 
 # Install basic packages and chroot into system
-curl 'https://www.archlinux.org/mirrorlist/?country=all&protocol=http&ip_version=4&use_mirror_status=on' | sed 's/^#S/S/' > /etc/pacman.d/mirrorlist
+curl 'https://www.archlinux.org/mirrorlist/?country=all&protocol=http&ip_version=4&use_mirror_status=on' | head -n 30 | sed 's/^#S/S/' | rankmirrors -n 4 - > /etc/pacman.d/mirrorlist
 pacstrap /mnt $packages
 genfstab -p /mnt >> /mnt/etc/fstab
